@@ -116,13 +116,28 @@
         .cell.on { background-color: var(--cell-on); box-shadow: 0 0 20px var(--shadow-color); }
         #controls { display: flex; flex-wrap: wrap; justify-content: center; }
 
-        #level-select-screen .levels-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-top: 20px;}
-        .level-button {
-            width: 70px; height: 70px; font-weight: 600; padding: 5px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        /* --- RESPONSIVE LEVEL SELECT FIX --- */
+        #level-select-screen .levels-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: clamp(5px, 2vw, 15px); /* Responsive gap */
+            margin-top: 20px;
+            width: 95vw;
+            max-width: 500px;
         }
-        .level-button .level-num { font-size: 1.5em; }
-        .level-button .level-pb { font-size: 0.7em; margin-top: 2px; }
+        .level-button {
+            font-weight: 600;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1 / 1; /* Makes the button a perfect square */
+            width: 100%; /* Removes fixed width */
+            height: auto; /* Removes fixed height */
+        }
+        .level-button .level-num { font-size: clamp(1rem, 5vw, 1.5em); } /* Responsive font size */
+        .level-button .level-pb { font-size: clamp(0.5rem, 2.5vw, 0.7em); margin-top: 2px; } /* Responsive font size */
         .level-button.locked { background-color: #555; color: #888; cursor: not-allowed; transform: none !important; }
         .level-button.extra { background-color: transparent; border: 3px solid var(--extra-color); color: var(--extra-color); }
         .level-button.extra:hover { background-color: var(--extra-color); color: white; }
@@ -166,7 +181,7 @@
             <div id="levels-grid-container-normal" class="levels-grid"></div>
             <h2>5x5 Extra Levels</h2>
             <div id="levels-grid-container-extra" class="levels-grid"></div>
-            <button class="button" onclick="showScreen('start-screen')">Main Menu</button>
+            <button class="button" onclick="goToStartScreen()">Main Menu</button>
         </div>
         
         <div id="win-modal" class="screen hidden">
@@ -181,31 +196,12 @@
 
     <script>
         const levels = [
-            { par: 2, size: 4, pattern: "1011000110101100" },
-            { par: 4, size: 4, pattern: "1110010001001110" },
-            { par: 3, size: 4, pattern: "1010000111111111" },
-            { par: 4, size: 4, pattern: "1001100101101111" },
-            { par: 5, size: 4, pattern: "1110110110100100" },
-            { par: 7, size: 5, pattern: "1111001010011100001100001" },
-            { par: 8, size: 5, pattern: "0010010100101111001000010" },
-            { par: 9, size: 5, pattern: "0011110010101000011001111" },
-            { par: 11, size: 5, pattern: "1111101111101101001101001" },
-            { par: 13, size: 5, pattern: "1010010100111000011101111" },
+            { par: 2, size: 4, pattern: "1011000110101100" }, { par: 4, size: 4, pattern: "1110010001001110" },
+            { par: 3, size: 4, pattern: "1010000111111111" }, { par: 4, size: 4, pattern: "1001100101101111" },
+            { par: 5, size: 4, pattern: "1110110110100100" }, { par: 7, size: 5, pattern: "1111001010011100001100001" },
+            { par: 8, size: 5, pattern: "0010010100101111001000010" }, { par: 9, size: 5, pattern: "0011110010101000011001111" },
+            { par: 11, size: 5, pattern: "1111101111101101001101001" }, { par: 13, size: 5, pattern: "1010010100111000011101111" },
         ];
-        /*
-        Solutions (you sneaky code digger):
-        (row, col) from 1 to 4.
-        level1: (2,2), (4,4)
-        level2: (4,2), (3,1), (4,3), (2,4)
-        level3: (1,1), (1,2), (1,3)
-        level4: (1,1), (1,4), (2,1), (2,4)
-        level5: (1,2), (1,3), (2,1), (3,1), (4,4)
-        level6: (2,5), (3,1), (3,3), (3,4), (4,5), (5,2), (5,5)
-        level7: (1,2), (1,4), (3,5), (4,2), (4,4), (4,5), (5,1), (5,3)
-        level8: (1,2), (1,4), (2,4), (2,5), (3,4), (3,5), (4,2), (4,3), (5,2)
-        level9: (1,1), (2,1), (2,2), (3,3), (4,1), (4,2), (4,3), (4,4), (4,5), (5,3), (5,4)
-        level10: (1,1), (2,1), (2,4), (2,5), (3,3), (3,4), (3,5), (4,1), (4,2), (4,4), (5,1), (5,2), (5,3)
-        */
         
         const screens = Object.fromEntries(Array.from(document.querySelectorAll('.screen')).map(el => [el.id, el]));
         const gridContainer = document.getElementById('grid-container');
@@ -237,12 +233,8 @@
         
         function loadLevel(levelNum) {
             const levelData = levels[levelNum - 1];
-            if (gameState.gridSize !== levelData.size) {
-                createGrid(levelData.size);
-            }
-
-            gameState.currentLevel = levelNum;
-            gameState.moves = 0;
+            if (gameState.gridSize !== levelData.size) { createGrid(levelData.size); }
+            gameState.currentLevel = levelNum; gameState.moves = 0;
             gameState.cells.forEach((cell, i) => cell.classList.toggle('on', levelData.pattern[i] === '1'));
             updateUI();
         }
@@ -252,30 +244,20 @@
         
         function handleCellClick(index) {
             gameState.moves++;
-            const size = gameState.gridSize;
-            const col = index % size;
+            const size = gameState.gridSize; const col = index % size;
             [index, index - size, index + size, (col > 0 ? index - 1 : -1), (col < size - 1 ? index + 1 : -1)]
                 .filter(i => i >= 0 && i < size * size).forEach(i => gameState.cells[i].classList.toggle('on'));
             updateUI();
             if (gameState.cells.every(c => c.classList.contains('on'))) handleWin();
         }
 
-        function triggerVibration(pattern) {
-            if ('vibrate' in navigator) {
-                navigator.vibrate(pattern);
-            }
-        }
+        function triggerVibration(pattern) { if ('vibrate' in navigator) navigator.vibrate(pattern); }
 
         function handleWin() {
-            // Morse for W-I-N: .-- .. -.
-            const winPattern = [100, 50, 300, 50, 300, 150, 100, 50, 100, 150, 300, 50, 100];
-            triggerVibration(winPattern);
-
+            triggerVibration([100, 50, 300, 50, 300, 150, 100, 50, 100, 150, 300, 50, 100]); // W-I-N
             gameState.progress.highestLevelBeaten = Math.max(gameState.progress.highestLevelBeaten, gameState.currentLevel);
             const currentPB = gameState.progress.pbs[gameState.currentLevel];
-            if (!currentPB || gameState.moves < currentPB) {
-                gameState.progress.pbs[gameState.currentLevel] = gameState.moves;
-            }
+            if (!currentPB || gameState.moves < currentPB) { gameState.progress.pbs[gameState.currentLevel] = gameState.moves; }
             saveProgress();
             
             const par = levels[gameState.currentLevel - 1].par;
@@ -307,10 +289,8 @@
             [normCont, xtraCont].forEach(c => c.innerHTML = '');
 
             for (let i = 1; i <= levels.length; i++) {
-                const levelData = levels[i-1];
-                const btn = document.createElement('button'), isUnlocked = i <= gameState.progress.highestLevelBeaten + 1;
-                const pb = gameState.progress.pbs[i];
-                
+                const levelData = levels[i-1], isUnlocked = i <= gameState.progress.highestLevelBeaten + 1;
+                const pb = gameState.progress.pbs[i], btn = document.createElement('button');
                 btn.innerHTML = `<span class="level-num">${i}</span><span class="level-pb">${pb ? `Best: ${pb}` : '---'}</span>`;
                 btn.className = 'button level-button';
                 if (!isUnlocked) btn.classList.add('locked');
@@ -326,19 +306,15 @@
             levelDisplay.textContent = `Level ${gameState.currentLevel}`;
             const par = levels[gameState.currentLevel - 1].par;
             movesDisplay.textContent = `Moves: ${gameState.moves} / Par: ${par}`;
-            document.getElementById('game-menu-btn').onclick = (gameState.progress.highestLevelBeaten >= 5) ? showLevelSelect : () => showScreen('start-screen');
-        }
-
-        function saveProgress() { localStorage.setItem('lightsOnProgress', JSON.stringify(gameState.progress)); }
-        function loadProgress() {
-            const saved = localStorage.getItem('lightsOnProgress');
-            if(saved) gameState.progress = JSON.parse(saved);
+            document.getElementById('game-menu-btn').onclick = (gameState.progress.highestLevelBeaten >= 5) ? showLevelSelect : goToStartScreen;
         }
         
-        function main() {
-            loadProgress();
-            createGrid(4); // Start with a 4x4 grid
-            
+        function goToStartScreen() {
+            updateStartScreen();
+            showScreen('start-screen');
+        }
+
+        function updateStartScreen() {
             const startBtn = document.getElementById('start-game-btn');
             const nextLevel = gameState.progress.highestLevelBeaten + 1;
             if (gameState.progress.highestLevelBeaten >= 5) {
@@ -351,6 +327,18 @@
                 startBtn.textContent = 'New Game';
                 startBtn.onclick = () => startGame(1);
             }
+        }
+
+        function saveProgress() { localStorage.setItem('lightsOnProgress', JSON.stringify(gameState.progress)); }
+        function loadProgress() {
+            const saved = localStorage.getItem('lightsOnProgress');
+            if(saved) gameState.progress = JSON.parse(saved);
+        }
+        
+        function main() {
+            loadProgress();
+            createGrid(4);
+            updateStartScreen();
             
             document.getElementById('reset-progress-btn').onclick = () => {
                 if (confirm('Are you sure you want to reset all your progress?')) {
