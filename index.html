@@ -202,6 +202,7 @@
     </div>
 
     <script>
+        const devmode = 0;
         const levels = [
             { par: 2, size: 4, pattern: "1011000110101100" }, { par: 4, size: 4, pattern: "1110010001001110" },
             { par: 3, size: 4, pattern: "1010000111111111" }, { par: 4, size: 4, pattern: "1001100101101111" },
@@ -272,7 +273,7 @@
             document.getElementById('win-message').textContent = gameState.moves <= par ? 'Excellent solve!' : 'Good job!';
             
             const winTitle = document.getElementById('win-title'), winNextBtn = document.getElementById('win-next-btn');
-            
+
             if (gameState.currentLevel === 5 && gameState.progress.highestLevelBeaten === 5) {
                 winTitle.textContent = 'Campaign Complete!';
                 document.getElementById('win-message').innerHTML = 'You unlocked <b>Level Select</b><br>and <b>5x5 Extra Levels!</b>';
@@ -354,10 +355,16 @@
                 }
             };
             
-            document.getElementById('skip-level-btn').onclick = () => {
-                gameState.moves = levels[gameState.currentLevel - 1].par;
-                handleWin();
-            };
+            const skipButton = document.getElementById('skip-level-btn');
+                if (devmode === 0) {
+                  skipButton.remove(); // Completely removes the button if devmode is off
+                } else {
+                // If devmode is on, the button stays and this click logic is attached
+                    skipButton.onclick = () => {
+                    gameState.moves = levels[gameState.currentLevel - 1].par;
+                    handleWin();
+                };
+            }
             
             document.getElementById('level-select-main-menu-btn').onclick = goToStartScreen;
 
