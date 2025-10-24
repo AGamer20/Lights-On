@@ -94,6 +94,11 @@
             margin: 10px;
             transition: transform 0.2s, background-color 0.2s;
         }
+        .button.timed-button {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important; 
+        }
         .button:hover { transform: scale(1.05); }
         .button.secondary { background-color: var(--secondary-color); }
         .button.secondary:hover { background-color: #5a6268; }
@@ -176,6 +181,10 @@
             transition: all 0.4s ease-in-out;
             pointer-events: none;
         }
+        #tutorial-highlight.spotlight-bright {
+            box-shadow: 0 0 20px 15px rgba(255, 255, 220, 0.3), /* This is the new bright inner glow */
+            0 0 0 9999px rgba(0, 0, 0, 0.7);       /* This is the existing dark overlay */
+        }
         #tutorial-text-box {
             position: absolute;
             background-color: var(--grid-bg);
@@ -185,6 +194,9 @@
             max-width: 300px;
             text-align: center;
             transition: all 0.4s ease-in-out;
+        }
+        .rtl #tutorial-text-box{
+            font-size: clamp(1rem, 5vw, 1.2em);
         }
     </style>
 </head>
@@ -243,6 +255,7 @@
 
     <script>
         const devmode = 0;
+        const TUTORIAL_DELAY = 5000; // 3 seconds
         const levels = [
             { par: 2, size: 4, pattern: "1011000110101100" }, { par: 4, size: 4, pattern: "1110010001001110" },
             { par: 3, size: 4, pattern: "1010000111111111" }, { par: 4, size: 4, pattern: "1001100101101111" },
@@ -287,12 +300,28 @@
                 unlocked: "لقد فتحت <b>اختيار المستوى</b><br>و <b>5 مستويات إضافية 5x5!</b>", goToLevelSelect: "اذهب إلى اختيار المستوى",
                 allLevelsComplete: "تهانينا!", allLevelsBeaten: "لقد تغلبت على جميع المستويات!", nextLevel: "المستوى التالي", ok: "حسنا",
                 resetConfirm: "هل أنت متأكد من أنك تريد إعادة ضبط كل تقدمك؟ (سيؤدي هذا أيضًا إلى إعادة تمكين البرنامج التعليمي.)",
-                tutorial_step1: "أهلاً بك! اضغط على مربع لقلب ضوءه وأضواء جيرانه. حاول الضغط على هذا.",
+                tutorial_step1: "اضغط على مربع لقلب ضوءه وأضواء جيرانه. حاول الضغط على هذا.",
                 tutorial_step2: "الهدف هو تشغيل كل الأضواء. 'أقل حركات محتاجة' هو أفضل نتيجة ممكنة للمستوى.",
-                tutorial_step3: "استخدم هذه الأزرار لإعادة ضبط المستوى أو العودة إلى القائمة. حظا سعيدا!",
+                tutorial_step3: "استخدم هذه الأزرار لإعادة ضبط المستوى أو العودة إلى القائمة. بالتوفيق!",
             }
         };
-        let currentLanguage = localStorage.getItem('lightsOnLanguage') || 'ar';
+        let currentLanguage; // Declare the variable first
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const langParam = urlParams.get('lang'); // Check for 'lang' in the URL
+
+        if (langParam === 'en' || langParam === 'ar') {
+            // If a valid language is in the URL, set it as the current language
+            currentLanguage = langParam;
+            // Also, save this choice so it's remembered for future visits
+            localStorage.setItem('lightsOnLanguage', currentLanguage); 
+            // Clean the parameter from the URL bar for a neater look
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } 
+        else {
+            // If no valid URL parameter, fall back to the saved language or the default ('ar')
+            currentLanguage = localStorage.getItem('lightsOnLanguage') || 'en';
+        }
 
         const screens = Object.fromEntries(Array.from(document.querySelectorAll('.screen')).map(el => [el.id, el]));
         const gridContainer = document.getElementById('grid-container');
@@ -443,6 +472,7 @@
 
         function saveProgress() { localStorage.setItem('lightsOnProgress', JSON.stringify(gameState.progress)); }
         function loadProgress() {
+            
             const saved = localStorage.getItem('lightsOnProgress');
             if(saved) gameState.progress = JSON.parse(saved);
         }
@@ -465,6 +495,11 @@
             ];
 
             function showStep() {
+                if (step === 0) {
+                    highlightBox.classList.add('spotlight-bright');
+                } else {
+                    highlightBox.classList.remove('spotlight-bright');
+                }
                 const currentStep = steps[step];
                 const targetRect = currentStep.el.getBoundingClientRect();
                 
@@ -483,6 +518,16 @@
                     textBox.style.bottom = `${window.innerHeight - targetRect.top + 15}px`;
                     textBox.style.top = 'auto';
                 }
+
+                // --- SNIPPET TO ADD ---
+                okBtn.disabled = true;
+                okBtn.classList.add('timed-button');
+
+                setTimeout(() => {
+                    okBtn.disabled = false;
+                    okBtn.classList.remove('timed-button');
+                }, TUTORIAL_DELAY);
+                // --- END OF SNIPPET ---
             }
             
             okBtn.onclick = () => {
