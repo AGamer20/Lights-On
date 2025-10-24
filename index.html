@@ -8,6 +8,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
+        @font-face {
+          font-family: 'Glowtone';
+            src: url('Glowtone.otf') format('opentype');
+        }
+
         :root {
             --bg-color: #121212;
             --grid-bg: #1d1d1d;
@@ -22,7 +27,7 @@
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Poppins', 'sans-serif';
             background-color: var(--bg-color);
             color: var(--text-color);
             display: flex;
@@ -58,6 +63,7 @@
         }
 
         h1 {
+            font-family: 'Glowtone';
             display: flex;
             align-items: center;
             justify-content: center;
@@ -182,7 +188,7 @@
             pointer-events: none;
         }
         #tutorial-highlight.spotlight-bright {
-            box-shadow: 0 0 20px 15px rgba(255, 255, 220, 0.3), /* This is the new bright inner glow */
+            box-shadow: 0 0 20px 15px rgba(238, 238, 238, 0.7), /* This is the new bright inner glow */
             0 0 0 9999px rgba(0, 0, 0, 0.7);       /* This is the existing dark overlay */
         }
         #tutorial-text-box {
@@ -523,10 +529,21 @@
                 okBtn.disabled = true;
                 okBtn.classList.add('timed-button');
 
-                setTimeout(() => {
-                    okBtn.disabled = false;
-                    okBtn.classList.remove('timed-button');
-                }, TUTORIAL_DELAY);
+                let countdown = Math.ceil(TUTORIAL_DELAY / 1000); // Calculate seconds from milliseconds
+                okBtn.textContent = `${translations[currentLanguage].ok} (${countdown})`;
+
+                const intervalId = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                        okBtn.textContent = `${translations[currentLanguage].ok} (${countdown})`;
+                    } else {
+                        // When timer finishes
+                        clearInterval(intervalId); // Stop the interval
+                        okBtn.disabled = false;
+                        okBtn.classList.remove('timed-button');
+                        okBtn.textContent = translations[currentLanguage].ok;
+                    }
+                }, 1000); // Run this every second
                 // --- END OF SNIPPET ---
             }
             
